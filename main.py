@@ -16,9 +16,12 @@ class TextWidget(Widget):
         self.text = ''
 
     def buttonClicked(self):        # ボタンをクリック時
-        result = subprocess.run(["ls"], stdout=subprocess.PIPE, text=True)
-        print(result.stdout)
-        self.text = result.stdout
+        result = subprocess.run("lsss", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        print(result.returncode)
+        if result.returncode == 0:
+            self.text = result.stdout
+        else:
+            self.text = "error"
 
 
 class TestApp(App):
