@@ -1,7 +1,7 @@
 #:kivy 2.0.0
-TextWidget: # ルートに追加
+RunWidget: # ルートに追加
 
-<TextWidget>:
+<RunWidget>:
     BoxLayout:
         orientation: 'vertical'
         size: root.size
@@ -10,7 +10,7 @@ TextWidget: # ルートに追加
         Label:
             id: label1
             font_size: 68
-            text: root.text    # root(TextWidget)の変数テキストの値を取得
+            text: root.text    # root(RunWidget)の変数テキストの値を取得
 
         Button:
             id: button1
