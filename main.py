@@ -11,16 +11,15 @@ import glob
 from pathlib import Path
 import shutil
 import os
+from plot_glaph import save_glaph_au6_au12
+
+# 【注意】環境に応じて適切なパスを選択する！！
+CMD = r"/Users/mrkm-cmc/openface/OpenFace-OpenFace_2.2.0/build/bin/FaceLandmarkVidMulti"  # 実行するコマンドのパス
 
 Window.size = (1000, 600)
 
-### 環境によって修正が必要な項目 ###
 resource_add_path('./Fonts')  # 日本語対応
 LabelBase.register(DEFAULT_FONT, 'GenEiGothicM-SemiLight.ttf')  # 日本語対応
-
-CMD = "/Users/mrkm-cmc/openface/OpenFace-OpenFace_2.2.0/build/bin/FaceLandmarkVidMulti"  # 実行するコマンドのパス
-### 環境によって修正が必要な項目 ###
-
 
 suffixs = ['.mp4', '.MP4', '.avi', '.AVI', '.mov', '.MOV']
 
@@ -42,7 +41,7 @@ class RunWidget(Widget):
 
     def _get_file_path(self, window, file_path):
         self._filepath = Path(file_path.decode('utf-8'))
-        self.label_text = '\"RUN\"ボタンをクリックして\n\"実行完了\"と表示されるまで待ってください．'
+        self.label_text = 'ファイルを受け取りました．\n\"RUN\"ボタンをクリックして\n\"実行完了\"と表示されるまでしばらくお待ち下さい．'
         self.button_text = 'RUN'
 
     def _is_file_exist(self):
@@ -63,6 +62,10 @@ class RunWidget(Widget):
             print("ERROR")
             return -1
 
+    def begin(self):
+        self.label_text = '実行中です．\n\"実行完了\"と表示されるまでしばらくお待ち下さい．'
+        self.button_text = ''
+
     def run_openface(self):
         flag = self._is_file_exist()
 
@@ -78,27 +81,41 @@ class RunWidget(Widget):
             return
 
         outdir = str(self._filepath.parent) + "/output/"
-        csvdir = Path(outdir + "csvDir/")
+        csvdir = Path(outdir + "csv/")
         try:
             os.makedirs(csvdir)
+        except FileExistsError:
+            pass
+        glaphdir = Path(outdir + "glaph/")
+        try:
+            os.makedirs(glaphdir)
         except FileExistsError:
             pass
 
         for inputvideo in videos:
             target_path = Path(inputvideo)
             name = target_path.stem
+            print(name + " is Running")
             result = subprocess.run([CMD, "-f", target_path, "-out_dir", outdir + name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             # print(result.stdout)  # OpenFace実行結果の確認
             if result.returncode == 0:
                 ori_csv = Path(outdir + name + "/" + name + ".csv")
                 shutil.copy(ori_csv, csvdir)
+                save_glaph_au6_au12(str(ori_csv), str(glaphdir), name)
                 print("DONE " + name)
             else:
                 print("error " + name)
 
         self._filepath = None
         self.button_text = ''
-        self.label_text = f"実行完了\n\n入力ファイルと同じディレクトリ\n({outdir})\nに出力しました．"
+        self.label_text = f"\
+            実行完了\n\n\
+            入力ファイルと同じディレクトリ\n\
+            ({outdir})\n\
+            に出力しました．\n\n\
+            続けて実行するには動画ファイルもしくはフォルダをドロップしてください．\n\
+            終了するには右上のバツを押してください．"  # win
+        # 終了するには左上のバツを押してください．"  # mac
 
 
 class RunOpenFaceApp(App):

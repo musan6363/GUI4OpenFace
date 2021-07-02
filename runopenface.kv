@@ -18,4 +18,5 @@ RunWidget: # ルートに追加
             font_size: 68
             size_hint_y: 0.2
             color: (71, 99, 225)
-            on_press: root.run_openface()  # ボタンをクリックした時にpython側の関数を呼ぶ
+            on_press: root.begin()
+            on_release: root.run_openface()
