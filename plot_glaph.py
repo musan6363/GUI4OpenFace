@@ -12,10 +12,6 @@ AU12_C = 6
 columns = [" face_id", " timestamp", " success", " AU06_r", " AU12_r", " AU06_c", " AU12_c"]
 
 
-def test():
-    print("hello")
-
-
 def save_glaph_au6_au12(csv: str, save_dir: str, save_name: str):
     df = pd.read_csv(csv)
     data = df.loc[:, columns]  # Openfaceの出力CSVは列によって先頭に空白文字を含むことに注意
@@ -34,7 +30,6 @@ def save_glaph_au6_au12(csv: str, save_dir: str, save_name: str):
         # 最も多く登場する顔のうち，処理に成功しているものを抽出
         if line[FACE_ID] == target_face_id and line[SUCCESS] == 1:
             target.append(line)
-            print(line)
 
     target_df = pd.DataFrame(target, columns=columns)
 

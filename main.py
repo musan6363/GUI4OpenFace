@@ -16,6 +16,10 @@ from plot_glaph import save_glaph_au6_au12
 # 【注意】環境に応じて適切なパスを選択する！！
 CMD = r"/Users/mrkm-cmc/openface/OpenFace-OpenFace_2.2.0/build/bin/FaceLandmarkVidMulti"  # 実行するコマンドのパス
 
+# 【注意】環境に応じて適切なパスを選択する！！
+# CMD = r"/Users/username/openface/OpenFace-OpenFace_2.2.0/build/bin/FaceLandmarkVidMulti"  # Macの例
+# CMD = r"C:\Users\username\OpenFace\OpenFace_2.2.0_win_x64\OpenFace_2.2.0_win_x64/FaceLandmarkVidMulti.exe"  # Windowsの例
+
 Window.size = (1000, 600)
 
 resource_add_path('./Fonts')  # 日本語対応
@@ -28,9 +32,8 @@ IS_DIR = 1
 
 
 class RunWidget(Widget):
-    # 【要改善】実行中であることがわかりにくい．ポップアップの追加等を検討
-    label_text = StringProperty()    # プロパティの追加
-    button_text = StringProperty()    # プロパティの追加
+    label_text = StringProperty()
+    button_text = StringProperty()
 
     def __init__(self, **kwargs):
         super(RunWidget, self).__init__(**kwargs)
@@ -41,7 +44,10 @@ class RunWidget(Widget):
 
     def _get_file_path(self, window, file_path):
         self._filepath = Path(file_path.decode('utf-8'))
-        self.label_text = 'ファイルを受け取りました．\n\"RUN\"ボタンをクリックして\n\"実行完了\"と表示されるまでしばらくお待ち下さい．'
+        self.label_text = '\
+            ファイルを受け取りました．\n\
+            \"RUN\"ボタンをクリックして\n\
+            \"実行完了\"と表示されるまでしばらくお待ち下さい．'
         self.button_text = 'RUN'
 
     def _is_file_exist(self):
@@ -63,7 +69,9 @@ class RunWidget(Widget):
             return -1
 
     def begin(self):
-        self.label_text = '実行中です．\n\"実行完了\"と表示されるまでしばらくお待ち下さい．'
+        self.label_text = '\
+            実行中です．\n\
+            \"実行完了\"と表示されるまでしばらくお待ち下さい．'
         self.button_text = ''
 
     def run_openface(self):
