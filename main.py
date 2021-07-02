@@ -4,9 +4,14 @@ from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.core.window import Window
 from kivy.properties import StringProperty
+from kivy.core.text import LabelBase, DEFAULT_FONT
+from kivy.resources import resource_add_path
 import subprocess
 import glob
 from pathlib import Path
+
+resource_add_path('/Users/mrkm-cmc/Library/Fonts')  # 日本語対応
+LabelBase.register(DEFAULT_FONT, 'GenEiGothicM-SemiLight.ttf')  # 日本語対応
 
 CMD = "/Users/mrkm-cmc/openface/OpenFace-OpenFace_2.2.0/build/bin/FaceLandmarkVidMulti"  # 実行するコマンドのパス
 
@@ -18,19 +23,20 @@ IS_DIR = 1
 
 
 class RunWidget(Widget):
+    # 【要改善】実行中であることがわかりにくい．ポップアップの追加等を検討
     label_text = StringProperty()    # プロパティの追加
 
     def __init__(self, **kwargs):
         super(RunWidget, self).__init__(**kwargs)
-        self.label_text = 'File is not selected'
+        self.label_text = '動画ファイルもしくはフォルダをここにドロップ\n\n\"実行完了\"と表示されるまで待ってください．'
 
         self._filepath = None
         self._file = Window.bind(on_dropfile=self._get_file_path)
 
     def _get_file_path(self, window, file_path):
         self._filepath = Path(file_path.decode('utf-8'))
-        self.label_text = self._filepath.name + " is selected"
         # self._make_outdir()
+        self.run_openface()
 
     def _make_outdir(self):
         # 選択されたパスの1つ上に出力ディレクトリを作る．
@@ -54,7 +60,7 @@ class RunWidget(Widget):
             print("ERROR")
             return -1
 
-    def buttonClicked(self):        # ボタンをクリック時
+    def run_openface(self):
         flag = self._is_file_exist()
 
         videos = []
@@ -67,12 +73,6 @@ class RunWidget(Widget):
         else:
             return
 
-        self.run_openface(videos)
-
-        self._filepath = None
-        self.label_text = "Done"
-
-    def run_openface(self, videos):
         _i = 0
         for inputvideo in videos:
             target_path = Path(inputvideo)
@@ -81,10 +81,13 @@ class RunWidget(Widget):
             print(result.returncode)
             print(result.stdout)
             if result.returncode == 0:
-                self.label_text = "DONE" + str(_i)
+                print("DONE" + str(_i))
             else:
-                self.label_text = "error" + str(_i)
+                print("error" + str(_i))
             _i += 1
+
+        self._filepath = None
+        self.label_text = "実行完了"
 
 
 class RunOpenFaceApp(App):
