@@ -9,6 +9,8 @@ from kivy.resources import resource_add_path
 import subprocess
 import glob
 from pathlib import Path
+import shutil
+import os
 
 Window.size = (1000, 300)
 
@@ -33,14 +35,11 @@ class RunWidget(Widget):
         self._filepath = None
         self._file = Window.bind(on_dropfile=self._get_file_path)
 
+        self.runcnt = 0  # _get_file_pathからrun_openfaceが2回実行されてしまう．それの防止
+
     def _get_file_path(self, window, file_path):
         self._filepath = Path(file_path.decode('utf-8'))
-        # self._make_outdir()
         self.run_openface()
-
-    def _make_outdir(self):
-        # 選択されたパスの1つ上に出力ディレクトリを作る．
-        pass
 
     def _is_file_exist(self):
         if self._filepath is None:
@@ -61,7 +60,15 @@ class RunWidget(Widget):
             return -1
 
     def run_openface(self):
+        print(self.runcnt)
+        if self.runcnt > 0:
+            return
+        self.runcnt += 1
+        print("debug1")  # debug
+
         flag = self._is_file_exist()
+
+        print("debug2")  # debug
 
         videos = []
         if flag == IS_VIDEO_FILE:
@@ -70,23 +77,31 @@ class RunWidget(Widget):
             for filetype in suffixs:
                 # 動画だけを対象に追加
                 videos.extend(glob.glob(str(self._filepath) + "/*" + filetype))
+                print("debug" + filetype)  # debug
         else:
             return
 
-        outdir = str(self._filepath.parent) + "/output/"
+        print("debug3")  # debug
 
-        _i = 0
+        outdir = str(self._filepath.parent) + "/output/"
+        csvdir = Path(outdir + "csvDir/")
+        try:
+            os.makedirs(csvdir)
+        except FileExistsError:
+            pass
+
+        print(videos)  # debug
         for inputvideo in videos:
             target_path = Path(inputvideo)
             name = target_path.stem
             result = subprocess.run([CMD, "-f", target_path, "-out_dir", outdir + name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            print(result.returncode)
-            print(result.stdout)
+            # print(result.stdout)  # OpenFace実行結果の確認
             if result.returncode == 0:
-                print("DONE" + str(_i))
+                ori_csv = Path(outdir + name + "/" + name + ".csv")
+                shutil.copy(ori_csv, csvdir)
+                print("DONE " + name)
             else:
-                print("error" + str(_i))
-            _i += 1
+                print("error " + name)
 
         self._filepath = None
         self.label_text = f"実行完了\n\n入力ファイルと同じディレクトリ\n({outdir})\nに出力しました．"
