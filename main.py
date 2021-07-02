@@ -12,7 +12,7 @@ from pathlib import Path
 import shutil
 import os
 
-Window.size = (1000, 300)
+Window.size = (1000, 600)
 
 resource_add_path('/Users/mrkm-cmc/Library/Fonts')  # 日本語対応
 LabelBase.register(DEFAULT_FONT, 'GenEiGothicM-SemiLight.ttf')  # 日本語対応
@@ -31,15 +31,13 @@ class RunWidget(Widget):
 
     def __init__(self, **kwargs):
         super(RunWidget, self).__init__(**kwargs)
-        self.label_text = '動画ファイルもしくはフォルダをここにドロップ\n\n\"実行完了\"と表示されるまで待ってください．'
+        self.label_text = '動画ファイルもしくはフォルダをここにドロップして，\n\"RUN\"ボタンをクリック'
         self._filepath = None
         self._file = Window.bind(on_dropfile=self._get_file_path)
 
-        self.runcnt = 0  # _get_file_pathからrun_openfaceが2回実行されてしまう．それの防止
-
     def _get_file_path(self, window, file_path):
         self._filepath = Path(file_path.decode('utf-8'))
-        self.run_openface()
+        self.label_text = '\"RUN\"ボタンをクリックして\n\"実行完了\"と表示されるまで待ってください．'
 
     def _is_file_exist(self):
         if self._filepath is None:
@@ -60,15 +58,7 @@ class RunWidget(Widget):
             return -1
 
     def run_openface(self):
-        print(self.runcnt)
-        if self.runcnt > 0:
-            return
-        self.runcnt += 1
-        print("debug1")  # debug
-
         flag = self._is_file_exist()
-
-        print("debug2")  # debug
 
         videos = []
         if flag == IS_VIDEO_FILE:
@@ -77,11 +67,9 @@ class RunWidget(Widget):
             for filetype in suffixs:
                 # 動画だけを対象に追加
                 videos.extend(glob.glob(str(self._filepath) + "/*" + filetype))
-                print("debug" + filetype)  # debug
         else:
+            self.label_text = "ファイルが見つかりません"
             return
-
-        print("debug3")  # debug
 
         outdir = str(self._filepath.parent) + "/output/"
         csvdir = Path(outdir + "csvDir/")
@@ -90,7 +78,6 @@ class RunWidget(Widget):
         except FileExistsError:
             pass
 
-        print(videos)  # debug
         for inputvideo in videos:
             target_path = Path(inputvideo)
             name = target_path.stem
