@@ -28,16 +28,19 @@ IS_DIR = 1
 class RunWidget(Widget):
     # 【要改善】実行中であることがわかりにくい．ポップアップの追加等を検討
     label_text = StringProperty()    # プロパティの追加
+    button_text = StringProperty()    # プロパティの追加
 
     def __init__(self, **kwargs):
         super(RunWidget, self).__init__(**kwargs)
-        self.label_text = '動画ファイルもしくはフォルダをここにドロップして，\n\"RUN\"ボタンをクリック'
+        self.label_text = '動画ファイルもしくはフォルダをここにドロップ'
+        self.button_text = ''
         self._filepath = None
         self._file = Window.bind(on_dropfile=self._get_file_path)
 
     def _get_file_path(self, window, file_path):
         self._filepath = Path(file_path.decode('utf-8'))
         self.label_text = '\"RUN\"ボタンをクリックして\n\"実行完了\"と表示されるまで待ってください．'
+        self.button_text = 'RUN'
 
     def _is_file_exist(self):
         if self._filepath is None:
@@ -91,6 +94,7 @@ class RunWidget(Widget):
                 print("error " + name)
 
         self._filepath = None
+        self.button_text = ''
         self.label_text = f"実行完了\n\n入力ファイルと同じディレクトリ\n({outdir})\nに出力しました．"
 
 
