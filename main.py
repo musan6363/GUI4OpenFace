@@ -14,10 +14,13 @@ import os
 
 Window.size = (1000, 600)
 
-resource_add_path('/Users/mrkm-cmc/Library/Fonts')  # 日本語対応
+### 環境によって修正が必要な項目 ###
+resource_add_path('./Fonts')  # 日本語対応
 LabelBase.register(DEFAULT_FONT, 'GenEiGothicM-SemiLight.ttf')  # 日本語対応
 
 CMD = "/Users/mrkm-cmc/openface/OpenFace-OpenFace_2.2.0/build/bin/FaceLandmarkVidMulti"  # 実行するコマンドのパス
+### 環境によって修正が必要な項目 ###
+
 
 suffixs = ['.mp4', '.MP4', '.avi', '.AVI', '.mov', '.MOV']
 
