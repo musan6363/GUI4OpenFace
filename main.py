@@ -10,13 +10,14 @@ import subprocess
 import glob
 from pathlib import Path
 
+Window.size = (1000, 300)
+
 resource_add_path('/Users/mrkm-cmc/Library/Fonts')  # 日本語対応
 LabelBase.register(DEFAULT_FONT, 'GenEiGothicM-SemiLight.ttf')  # 日本語対応
 
 CMD = "/Users/mrkm-cmc/openface/OpenFace-OpenFace_2.2.0/build/bin/FaceLandmarkVidMulti"  # 実行するコマンドのパス
 
 suffixs = ['.mp4', '.MP4', '.avi', '.AVI', '.mov', '.MOV']
-outdir = "/Users/mrkm-cmc/openface/output/210702/"  # 【要修正】引数で親ディレクトリを与えて，その中に動画ごとにフォルダを作る．
 
 IS_VIDEO_FILE = 0
 IS_DIR = 1
@@ -29,7 +30,6 @@ class RunWidget(Widget):
     def __init__(self, **kwargs):
         super(RunWidget, self).__init__(**kwargs)
         self.label_text = '動画ファイルもしくはフォルダをここにドロップ\n\n\"実行完了\"と表示されるまで待ってください．'
-
         self._filepath = None
         self._file = Window.bind(on_dropfile=self._get_file_path)
 
@@ -73,6 +73,8 @@ class RunWidget(Widget):
         else:
             return
 
+        outdir = str(self._filepath.parent) + "/output/"
+
         _i = 0
         for inputvideo in videos:
             target_path = Path(inputvideo)
@@ -87,7 +89,7 @@ class RunWidget(Widget):
             _i += 1
 
         self._filepath = None
-        self.label_text = "実行完了"
+        self.label_text = f"実行完了\n\n入力ファイルと同じディレクトリ\n({outdir})\nに出力しました．"
 
 
 class RunOpenFaceApp(App):
