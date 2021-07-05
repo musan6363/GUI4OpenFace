@@ -88,7 +88,8 @@ class RunWidget(Widget):
             self.label_text = "ファイルが見つかりません"
             return
 
-        outdir = str(self._filepath.parent) + "/output/"
+        lastpath = os.path.splitext(os.path.basename(str(self._filepath)))[0]
+        outdir = str(self._filepath.parent) + f"/{lastpath}_output/"
         csvdir = Path(outdir + "csv/")
         try:
             os.makedirs(csvdir)
