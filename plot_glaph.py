@@ -56,6 +56,7 @@ class PlotGlaph:
         ax = self.df.plot.scatter(x=columns[TIMESTAMP], y=columns[AU12_R], label='AU12', color='blue', ax=ax)
         # plt.show()
         plt.savefig(self.save_dir + "/" + self.save_name + ".png")
+        plt.close()
 
 
 if __name__ == '__main__':
