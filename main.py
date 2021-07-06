@@ -113,6 +113,11 @@ class RunWidget(Widget):
             target_path = Path(inputvideo)
             name = target_path.stem
             print(name + " is Running")
+            # 実行中のファイルを記録．異常終了時に確認する用．正常終了すればこのファイルは消える．
+            with open(outdir + "current_run.txt", mode='a') as run_f:
+                run_f.write(name + '\n')
+
+            # 【メイン】OpenFaceの実行
             result = subprocess.run([CMD, "-f", target_path, "-out_dir", outdir + name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
             # OpenFace実行結果の確認
@@ -153,6 +158,7 @@ class RunWidget(Widget):
 に出力しました．\n\n\
 続けて実行するには動画ファイルもしくはフォルダをドロップしてください．\n\
 終了するには右上のバツを押してください．"  # win
+            os.remove(outdir + "current_run.txt")
 
 
 class RunOpenFaceApp(App):
