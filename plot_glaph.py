@@ -1,5 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy import interpolate
+import numpy as np
 
 '''
 グラフに表示する要素を追加するときは，追加箇所1,2を変更すれば良い．
@@ -52,8 +54,24 @@ class PlotGlaph:
         # 追加箇所2
         # 追加したデータ分，plot命令を追加する．
         # colorはグラフ上で見分けるために変えたほうが良い．
-        ax = self.df.plot.scatter(x=columns[TIMESTAMP], y=columns[AU06_R], label='AU06', color='red')
-        ax = self.df.plot.scatter(x=columns[TIMESTAMP], y=columns[AU12_R], label='AU12', color='blue', ax=ax)
+        # ax = self.df.plot.scatter(x=columns[TIMESTAMP], y=columns[AU06_R], label='AU06', color='red')
+        # ax = self.df.plot.scatter(x=columns[TIMESTAMP], y=columns[AU12_R], label='AU12', color='blue', ax=ax)
+        # tmp[0]:timestamp, tmp[1]:AU06, tmp[2]:AU12
+        tmp = self.df[[columns[TIMESTAMP], columns[AU06_R], columns[AU12_R]]].values.T
+        x_latent = np.linspace(min(tmp[0]), max(tmp[0]), 100)
+        print(tmp[0])
+        fitted_curve = interpolate.interp1d(x=tmp[0], y=tmp[1])
+        plt.scatter(tmp[0], tmp[1], label="observed")
+        plt.plot(x_latent, fitted_curve(x_latent), c="red", label="fitted")
+        plt.grid()
+        plt.legend()
+        plt.show()
+
+        # ax = self.df.plot(x=columns[TIMESTAMP], y=columns[AU06_R], label='AU06', color='red')
+        # ax = self.df.plot(x=columns[TIMESTAMP], y=columns[AU12_R], label='AU12', color='blue', ax=ax)
+
+        # plt.grid()
+        # plt.legend()
         # plt.show()
         plt.savefig(self.save_dir + "/" + self.save_name + ".png")
         plt.close()
@@ -62,6 +80,6 @@ class PlotGlaph:
 if __name__ == '__main__':
     # debug
     csvpath = "/Users/mrkm-cmc/GoogleDrive/NU/cmc/210702/Girl49394.csv"
-    save_dir = "/Users/mrkm-cmc/GoogleDrive/NU/cmc/210705"
+    save_dir = "/Users/mrkm-cmc/GoogleDrive/NU/cmc/210706"
     save_name = "test"
     PlotGlaph(csvpath, save_dir, save_name)
