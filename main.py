@@ -11,14 +11,9 @@ import glob
 from pathlib import Path
 import shutil
 import os
+import sys
 from plot_glaph import PlotGlaph
 
-# 【注意】環境に応じて適切なパスを選択する！！
-CMD = r"/Users/mrkm-cmc/openface/OpenFace-OpenFace_2.2.0/build/bin/FaceLandmarkVidMulti"  # 実行するコマンドのパス
-
-# 【注意】環境に応じて適切なパスを選択する！！
-# CMD = r"/Users/username/openface/OpenFace-OpenFace_2.2.0/build/bin/FaceLandmarkVidMulti"  # Macの例
-# CMD = r"C:\Users\username\OpenFace\OpenFace_2.2.0_win_x64\OpenFace_2.2.0_win_x64/FaceLandmarkVidMulti.exe"  # Windowsの例
 if len(sys.argv) == 2:
     CMD = sys.argv[1]
 else:
@@ -37,6 +32,10 @@ suffixs = ['.mp4', '.MP4', '.avi', '.AVI', '.mov', '.MOV']
 IS_VIDEO_FILE = 0
 IS_DIR = 1
 
+# 既知の無視するエラー
+ignore_error = [
+    '[ WARN:1] global /tmp/opencv-20210523-95168-eavm03/opencv-4.5.2/modules/core/src/matrix_expressions.cpp (1334) assign OpenCV/MatExpr: processing of multi-channel arrays might be changed in the future: https://github.com/opencv/opencv/issues/16739\n']
+
 
 class RunWidget(Widget):
     label_text = StringProperty()
@@ -47,6 +46,7 @@ class RunWidget(Widget):
         self.label_text = '動画ファイルもしくはフォルダをここにドロップ'
         self.button_text = ''
         self._filepath = None
+        self.flag_error = False
         self._file = Window.bind(on_dropfile=self._get_file_path)
 
     def _get_file_path(self, window, file_path):
@@ -95,6 +95,7 @@ class RunWidget(Widget):
             self.label_text = "ファイルが見つかりません"
             return
 
+        # 出力ディレクトリの作成
         lastpath = os.path.splitext(os.path.basename(str(self._filepath)))[0]
         outdir = str(self._filepath.parent) + f"/{lastpath}_output/"
         csvdir = Path(outdir + "csv/")
@@ -113,7 +114,19 @@ class RunWidget(Widget):
             name = target_path.stem
             print(name + " is Running")
             result = subprocess.run([CMD, "-f", target_path, "-out_dir", outdir + name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            # print(result.stdout)  # OpenFace実行結果の確認
+
+            # OpenFace実行結果の確認
+            with open(outdir + name + "/" + name + "_stdout.txt", mode='w') as stdout_f:
+                stdout_f.write(result.stdout)
+            if result.stderr and result.stderr not in ignore_error:
+                # エラー出力があれば各ディレクトリにログを残す．
+                # 出力ディレクトリにエラーが出たファイル名をまとめて追記する．
+                self.flag_error = True
+                with open(outdir + name + "/" + name + "_stderr.txt", mode='w') as stderr_f:
+                    stderr_f.write(result.stderr)
+                with open(outdir + "stderr_all.txt", mode='a') as allerr_f:
+                    allerr_f.write(name + '\n')
+
             if result.returncode == 0:
                 ori_csv = Path(outdir + name + "/" + name + ".csv")
                 shutil.copy(ori_csv, csvdir)
@@ -124,14 +137,22 @@ class RunWidget(Widget):
 
         self._filepath = None
         self.button_text = ''
-        self.label_text = f"\
+        if self.flag_error:
+            self.label_text = f"\
+実行完了\n\n\
+入力ファイルと同じディレクトリ\n\
+({outdir})\n\
+に出力しました．\n\n\
+一部のファイルにエラーがあります．\n\
+詳しくは出力先のstderr_all.txtに書かれたディレクトリを参照してください．"
+        else:
+            self.label_text = f"\
 実行完了\n\n\
 入力ファイルと同じディレクトリ\n\
 ({outdir})\n\
 に出力しました．\n\n\
 続けて実行するには動画ファイルもしくはフォルダをドロップしてください．\n\
 終了するには右上のバツを押してください．"  # win
-        # 終了するには左上のバツを押してください．"  # mac
 
 
 class RunOpenFaceApp(App):
