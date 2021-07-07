@@ -46,7 +46,8 @@ def PlotGlaph(csv: str, save_dir: str, save_name: str):
     # 最も多く登場する顔のうち，処理に成功しているものを抽出
     target = []
     for line in data.values:
-        if line[FACE_ID] == target_face_id and line[SUCCESS] == 1:
+        # if line[FACE_ID] == target_face_id and line[SUCCESS] == 1:
+        if line[FACE_ID] == target_face_id:
             target.append(line)
 
     if len(target) == 0:
