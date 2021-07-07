@@ -33,6 +33,10 @@ AU45_R = 19
 colorlist = ['#ff7f7f', '#ff7fbf', '#ff7fff', '#bf7fff', '#7f7fff', '#7fbfff', '#7fffff', '#7fffbf', '#7fff7f', '#bfff7f', '#ffff7f', '#ffbf7f', '#ff0000', '#ff00ff', '#7f00ff', '#007fff', '#00ff7f']
 
 
+class NoSuccessValue(Exception):
+    pass
+
+
 def PlotGlaph(csv: str, save_dir: str, save_name: str):
     df = pd.read_csv(csv)
     data = df.loc[:, columns]
@@ -44,6 +48,9 @@ def PlotGlaph(csv: str, save_dir: str, save_name: str):
     for line in data.values:
         if line[FACE_ID] == target_face_id and line[SUCCESS] == 1:
             target.append(line)
+
+    if len(target) == 0:
+        raise NoSuccessValue
 
     df = pd.DataFrame(target, columns=columns)
 
@@ -87,7 +94,7 @@ def plot(args):
 
 if __name__ == '__main__':
     # debug
-    csvpath = "/Users/mrkm-cmc/GoogleDrive/NU/cmc/210702/Girl49394.csv"
-    save_dir = "/Users/mrkm-cmc/GoogleDrive/NU/cmc/210706"
-    save_name = "test"
+    csvpath = "/Users/mrkm-cmc/GoogleDrive/NU/cmc/210706/cutvideo_output/id0136no01_12/id0136no01_12.csv"
+    save_dir = "/Users/mrkm-cmc/GoogleDrive/NU/cmc/210707"
+    save_name = "id0136no01_12"
     PlotGlaph(csvpath, save_dir, save_name)

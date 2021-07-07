@@ -12,7 +12,7 @@ from pathlib import Path
 import shutil
 import os
 import sys
-from plot_glaph import PlotGlaph
+import plot_glaph
 
 if len(sys.argv) == 2:
     CMD = sys.argv[1]
@@ -109,36 +109,51 @@ class RunWidget(Widget):
         except FileExistsError:
             pass
 
+        _runcount = 1
         for inputvideo in videos:
             target_path = Path(inputvideo)
             name = target_path.stem
-            print(name + " is Running")
+            print(f"[{_runcount}/{len(videos)}]" + name + " is Running")
+            _runcount += 1
             # 実行中のファイルを記録．異常終了時に確認する用．正常終了すればこのファイルは消える．
             with open(outdir + "current_run.txt", mode='a') as run_f:
                 run_f.write(name + '\n')
 
-            # 【メイン】OpenFaceの実行
-            result = subprocess.run([CMD, "-f", target_path, "-out_dir", outdir + name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            try:
+                # 【メイン】OpenFaceの実行
+                result = subprocess.run([CMD, "-f", target_path, "-out_dir", outdir + name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-            # OpenFace実行結果の確認
-            with open(outdir + name + "/" + name + "_stdout.txt", mode='w') as stdout_f:
-                stdout_f.write(result.stdout)
-            if result.stderr and result.stderr not in ignore_error:
-                # エラー出力があれば各ディレクトリにログを残す．
-                # 出力ディレクトリにエラーが出たファイル名をまとめて追記する．
+                # OpenFace実行結果の確認
+                with open(outdir + name + "/" + name + "_stdout.txt", mode='w') as stdout_f:
+                    stdout_f.write(result.stdout)
+                if result.stderr and result.stderr not in ignore_error:
+                    # エラー出力があれば各ディレクトリにログを残す．
+                    # 出力ディレクトリにエラーが出たファイル名をまとめて追記する．
+                    self.flag_error = True
+                    with open(outdir + name + "/" + name + "_stderr.txt", mode='w') as stderr_f:
+                        stderr_f.write(result.stderr + '\n')
+                    with open(outdir + "stderr_all.txt", mode='a') as allerr_f:
+                        allerr_f.write(name + '\n')
+
+                if result.returncode == 0:
+                    ori_csv = Path(outdir + name + "/" + name + ".csv")
+                    shutil.copy(ori_csv, csvdir)
+                    plot_glaph.PlotGlaph(str(ori_csv), str(glaphdir), name)
+                    print("DONE " + name)
+                else:
+                    print("error " + name)
+            except plot_glaph.NoSuccessValue:
                 self.flag_error = True
-                with open(outdir + name + "/" + name + "_stderr.txt", mode='w') as stderr_f:
-                    stderr_f.write(result.stderr)
+                with open(outdir + name + "/" + name + "_stderr.txt", mode='a') as stderr_f:
+                    stderr_f.write("NoSuccessValue: CSVに成功データ(success=1)がないかもしれません．\n")
                 with open(outdir + "stderr_all.txt", mode='a') as allerr_f:
-                    allerr_f.write(name + '\n')
-
-            if result.returncode == 0:
-                ori_csv = Path(outdir + name + "/" + name + ".csv")
-                shutil.copy(ori_csv, csvdir)
-                PlotGlaph(str(ori_csv), str(glaphdir), name)
-                print("DONE " + name)
-            else:
-                print("error " + name)
+                    allerr_f.write(name + ": NoSuccessValue: CSVに成功データ(success=1)がないかもしれません．" + '\n')
+            except:
+                self.flag_error = True
+                with open(outdir + name + "/" + name + "_stderr.txt", mode='a') as stderr_f:
+                    stderr_f.write("Unexpected Error\n")
+                with open(outdir + "stderr_all.txt", mode='a') as allerr_f:
+                    allerr_f.write(name + ": Unexpected Error" + '\n')
 
         self._filepath = None
         self.button_text = ''
@@ -158,7 +173,7 @@ class RunWidget(Widget):
 に出力しました．\n\n\
 続けて実行するには動画ファイルもしくはフォルダをドロップしてください．\n\
 終了するには右上のバツを押してください．"  # win
-            os.remove(outdir + "current_run.txt")
+        os.remove(outdir + "current_run.txt")
 
 
 class RunOpenFaceApp(App):
