@@ -30,7 +30,8 @@ AU25_R = 17
 AU26_R = 18
 AU45_R = 19
 
-colorlist = ['#ff7f7f', '#ff7fbf', '#ff7fff', '#bf7fff', '#7f7fff', '#7fbfff', '#7fffff', '#7fffbf', '#7fff7f', '#bfff7f', '#ffff7f', '#ffbf7f', '#ff0000', '#ff00ff', '#7f00ff', '#007fff', '#00ff7f']
+# colorlist = ['#ff7f7f', '#ff7fbf', '#ff7fff', '#bf7fff', '#7f7fff', '#7fbfff', '#7fffff', '#7fffbf', '#7fff7f', '#bfff7f', '#ffff7f', '#ffbf7f', '#ff0000', '#ff00ff', '#7f00ff', '#007fff', '#00ff7f']
+colorlist = ['#ff0000', '#0000ff']
 
 
 class NoSuccessValue(Exception):
@@ -56,11 +57,12 @@ def PlotGlaph(csv: str, save_dir: str, save_name: str):
     df = pd.DataFrame(target, columns=columns)
 
     # npdata[0]:timestamp, npdata[1]:AU06, npdata[2]:AU12
-    npdata = df[[columns[TIMESTAMP], columns[AU01_R], columns[AU02_R], columns[AU04_R], columns[AU05_R], columns[AU06_R], columns[AU07_R], columns[AU09_R], columns[AU10_R],
-                 columns[AU12_R], columns[AU14_R], columns[AU15_R], columns[AU17_R], columns[AU20_R], columns[AU23_R], columns[AU25_R], columns[AU26_R], columns[AU45_R]]].values.T
+    # npdata = df[[columns[TIMESTAMP], columns[AU01_R], columns[AU02_R], columns[AU04_R], columns[AU05_R], columns[AU06_R], columns[AU07_R], columns[AU09_R], columns[AU10_R],
+    #              columns[AU12_R], columns[AU14_R], columns[AU15_R], columns[AU17_R], columns[AU20_R], columns[AU23_R], columns[AU25_R], columns[AU26_R], columns[AU45_R]]].values.T
+    npdata = df[[columns[TIMESTAMP], columns[AU06_R], columns[AU12_R]]].values.T
     x_latent = np.linspace(min(npdata[0]), max(npdata[0]), 100)  # 保管用のX軸データ
 
-    liners = [interpolate.interp1d(x=npdata[0], y=npdata[i + 1]) for i in range(17)]
+    liners = [interpolate.interp1d(x=npdata[0], y=npdata[i + 1]) for i in range(2)]  # 定数はやめたい．npdataのサイズ-1
 
     p = Pool(1)
     p.map(plot, [[x_latent, liners, save_dir, save_name]])
@@ -83,8 +85,10 @@ def plot(args):
 
     fig = plt.figure(figsize=[16.18, 10])
     _i = 0
+    tmp_label = ["AU06", "AU12"]
     for liner in liners:
-        plt.plot(x_latent, liner(x_latent), color=colorlist[_i], label=columns[_i + 3])
+        # plt.plot(x_latent, liner(x_latent), color=colorlist[_i], label=columns[_i + 3])  # npdataの変更とラベルが対応できていない．
+        plt.plot(x_latent, liner(x_latent), color=colorlist[_i], label=tmp_label[_i])
         _i += 1
     plt.grid()
     plt.legend()
@@ -95,7 +99,7 @@ def plot(args):
 
 if __name__ == '__main__':
     # debug
-    csvpath = "/Users/mrkm-cmc/GoogleDrive/NU/cmc/210706/cutvideo_output/id0136no01_12/id0136no01_12.csv"
-    save_dir = "/Users/mrkm-cmc/GoogleDrive/NU/cmc/210707"
-    save_name = "id0136no01_12"
+    csvpath = "/Volumes/GoogleDrive/マイドライブ/NU/cmc/work/210926/デモ用AIST/f01_hap_0_output/f01_hap_0/f01_hap_0.csv"
+    save_dir = "/Volumes/GoogleDrive/マイドライブ/NU/cmc/work/210926"
+    save_name = "demo"
     PlotGlaph(csvpath, save_dir, save_name)

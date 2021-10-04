@@ -13,6 +13,7 @@ import shutil
 import os
 import sys
 import plot_glaph
+import datetime
 
 if len(sys.argv) == 2:
     CMD = sys.argv[1]
@@ -34,7 +35,7 @@ IS_DIR = 1
 
 # 既知の無視するエラー
 ignore_error = [
-    '[ WARN:1] global /tmp/opencv-20210523-95168-eavm03/opencv-4.5.2/modules/core/src/matrix_expressions.cpp (1334) assign OpenCV/MatExpr: processing of multi-channel arrays might be changed in the future: https://github.com/opencv/opencv/issues/16739\n']
+    '[ WARN:1] global /tmp/opencv-20210523-95168-eavm03/opencv-4.5.2/modules/core/src/matrix_expressions.cpp (1334) assign OpenCV/MatExpr: processing of multi-channel arrays might be changed in the future: https://github.com/opencv/opencv/issues/16739\n', '[ WARN:1] global /tmp/opencv-20210728-15491-hx6tk7/opencv-4.5.3/modules/core/src/matrix_expressions.cpp (1334) assign OpenCV/MatExpr: processing of multi-channel arrays might be changed in the future: https://github.com/opencv/opencv/issues/16739\n']
 
 
 class RunWidget(Widget):
@@ -97,7 +98,8 @@ class RunWidget(Widget):
 
         # 出力ディレクトリの作成
         lastpath = os.path.splitext(os.path.basename(str(self._filepath)))[0]
-        outdir = str(self._filepath.parent) + f"/{lastpath}_output/"
+        pare_name = str(self._filepath.parent)
+        outdir = pare_name + f"/tmp_{lastpath}_output/"
         csvdir = Path(outdir + "csv/")
         try:
             os.makedirs(csvdir)
@@ -117,7 +119,8 @@ class RunWidget(Widget):
             _runcount += 1
             # 実行中のファイルを記録．異常終了時に確認する用．正常終了すればこのファイルは消える．
             with open(outdir + "current_run.txt", mode='a') as run_f:
-                run_f.write(name + '\n')
+                dt_now = datetime.datetime.now()
+                run_f.write(dt_now.strftime('%Y/%m/%d %H:%M:%S') + "\t" + name + '\n')
 
             try:
                 # 【メイン】OpenFaceの実行
@@ -166,14 +169,16 @@ class RunWidget(Widget):
 一部のファイルにエラーがあります．\n\
 詳しくは出力先のstderr_all.txtに書かれたディレクトリを参照してください．"
         else:
+            new_dir = pare_name + f"/{lastpath}_output/"
+            os.rename(outdir[:-1], new_dir)  # フォルダのリネーム
+            os.remove(new_dir + "current_run.txt")
             self.label_text = f"\
 実行完了\n\n\
 入力ファイルと同じディレクトリ\n\
-({outdir})\n\
+({new_dir})\n\
 に出力しました．\n\n\
 続けて実行するには動画ファイルもしくはフォルダをドロップしてください．\n\
 終了するには右上のバツを押してください．"  # win
-        os.remove(outdir + "current_run.txt")
 
 
 class RunOpenFaceApp(App):
