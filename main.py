@@ -12,7 +12,8 @@ from pathlib import Path
 import shutil
 import os
 import sys
-from plot_glaph import PlotGlaph
+import plot_glaph
+import datetime
 
 if len(sys.argv) == 2:
     CMD = sys.argv[1]
@@ -34,7 +35,7 @@ IS_DIR = 1
 
 # 既知の無視するエラー
 ignore_error = [
-    '[ WARN:1] global /tmp/opencv-20210523-95168-eavm03/opencv-4.5.2/modules/core/src/matrix_expressions.cpp (1334) assign OpenCV/MatExpr: processing of multi-channel arrays might be changed in the future: https://github.com/opencv/opencv/issues/16739\n']
+    '[ WARN:1] global /tmp/opencv-20210728-15491-hx6tk7/opencv-4.5.3/modules/core/src/matrix_expressions.cpp (1334) assign OpenCV/MatExpr: processing of multi-channel arrays might be changed in the future: https://github.com/opencv/opencv/issues/16739\n']
 
 
 class RunWidget(Widget):
@@ -97,7 +98,8 @@ class RunWidget(Widget):
 
         # 出力ディレクトリの作成
         lastpath = os.path.splitext(os.path.basename(str(self._filepath)))[0]
-        outdir = str(self._filepath.parent) + f"/{lastpath}_output/"
+        pare_name = str(self._filepath.parent)
+        outdir = pare_name + f"/tmp_{lastpath}_output/"
         csvdir = Path(outdir + "csv/")
         try:
             os.makedirs(csvdir)
@@ -109,36 +111,52 @@ class RunWidget(Widget):
         except FileExistsError:
             pass
 
+        _runcount = 1
         for inputvideo in videos:
             target_path = Path(inputvideo)
             name = target_path.stem
-            print(name + " is Running")
+            print(f"[{_runcount}/{len(videos)}]" + name + " is Running")
+            _runcount += 1
             # 実行中のファイルを記録．異常終了時に確認する用．正常終了すればこのファイルは消える．
             with open(outdir + "current_run.txt", mode='a') as run_f:
-                run_f.write(name + '\n')
+                dt_now = datetime.datetime.now()
+                run_f.write(dt_now.strftime('%Y/%m/%d %H:%M:%S') + "\t" + name + '\n')
 
-            # 【メイン】OpenFaceの実行
-            result = subprocess.run([CMD, "-f", target_path, "-out_dir", outdir + name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            try:
+                # 【メイン】OpenFaceの実行
+                result = subprocess.run([CMD, "-f", target_path, "-out_dir", outdir + name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-            # OpenFace実行結果の確認
-            with open(outdir + name + "/" + name + "_stdout.txt", mode='w') as stdout_f:
-                stdout_f.write(result.stdout)
-            if result.stderr and result.stderr not in ignore_error:
-                # エラー出力があれば各ディレクトリにログを残す．
-                # 出力ディレクトリにエラーが出たファイル名をまとめて追記する．
+                # OpenFace実行結果の確認
+                with open(outdir + name + "/" + name + "_stdout.txt", mode='w') as stdout_f:
+                    stdout_f.write(result.stdout)
+                if result.stderr and result.stderr not in ignore_error:
+                    # エラー出力があれば各ディレクトリにログを残す．
+                    # 出力ディレクトリにエラーが出たファイル名をまとめて追記する．
+                    self.flag_error = True
+                    with open(outdir + name + "/" + name + "_stderr.txt", mode='w') as stderr_f:
+                        stderr_f.write(result.stderr + '\n')
+                    with open(outdir + "stderr_all.txt", mode='a') as allerr_f:
+                        allerr_f.write(name + '\n')
+
+                if result.returncode == 0:
+                    ori_csv = Path(outdir + name + "/" + name + ".csv")
+                    shutil.copy(ori_csv, csvdir)
+                    plot_glaph.PlotGlaph(str(ori_csv), str(glaphdir), name)
+                    print("DONE " + name)
+                else:
+                    print("error " + name)
+            except plot_glaph.NoSuccessValue:
                 self.flag_error = True
-                with open(outdir + name + "/" + name + "_stderr.txt", mode='w') as stderr_f:
-                    stderr_f.write(result.stderr)
+                with open(outdir + name + "/" + name + "_stderr.txt", mode='a') as stderr_f:
+                    stderr_f.write("NoSuccessValue: CSVに成功データ(success=1)がないかもしれません．\n")
                 with open(outdir + "stderr_all.txt", mode='a') as allerr_f:
-                    allerr_f.write(name + '\n')
-
-            if result.returncode == 0:
-                ori_csv = Path(outdir + name + "/" + name + ".csv")
-                shutil.copy(ori_csv, csvdir)
-                PlotGlaph(str(ori_csv), str(glaphdir), name)
-                print("DONE " + name)
-            else:
-                print("error " + name)
+                    allerr_f.write(name + ": NoSuccessValue: CSVに成功データ(success=1)がないかもしれません．" + '\n')
+            except:
+                self.flag_error = True
+                with open(outdir + name + "/" + name + "_stderr.txt", mode='a') as stderr_f:
+                    stderr_f.write("Unexpected Error\n")
+                with open(outdir + "stderr_all.txt", mode='a') as allerr_f:
+                    allerr_f.write(name + ": Unexpected Error" + '\n')
 
         self._filepath = None
         self.button_text = ''
@@ -151,14 +169,16 @@ class RunWidget(Widget):
 一部のファイルにエラーがあります．\n\
 詳しくは出力先のstderr_all.txtに書かれたディレクトリを参照してください．"
         else:
+            new_dir = pare_name + f"/{lastpath}_output/"
+            os.rename(outdir[:-1], new_dir)  # フォルダのリネーム
+            os.remove(new_dir + "current_run.txt")
             self.label_text = f"\
 実行完了\n\n\
 入力ファイルと同じディレクトリ\n\
-({outdir})\n\
+({new_dir})\n\
 に出力しました．\n\n\
 続けて実行するには動画ファイルもしくはフォルダをドロップしてください．\n\
 終了するには右上のバツを押してください．"  # win
-            os.remove(outdir + "current_run.txt")
 
 
 class RunOpenFaceApp(App):
