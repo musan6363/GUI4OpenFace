@@ -35,7 +35,7 @@ IS_DIR = 1
 
 # 既知の無視するエラー
 ignore_error = [
-    '[ WARN:1] global /tmp/opencv-20210523-95168-eavm03/opencv-4.5.2/modules/core/src/matrix_expressions.cpp (1334) assign OpenCV/MatExpr: processing of multi-channel arrays might be changed in the future: https://github.com/opencv/opencv/issues/16739\n', '[ WARN:1] global /tmp/opencv-20210728-15491-hx6tk7/opencv-4.5.3/modules/core/src/matrix_expressions.cpp (1334) assign OpenCV/MatExpr: processing of multi-channel arrays might be changed in the future: https://github.com/opencv/opencv/issues/16739\n']
+    '[ WARN:1] global /tmp/opencv-20210728-15491-hx6tk7/opencv-4.5.3/modules/core/src/matrix_expressions.cpp (1334) assign OpenCV/MatExpr: processing of multi-channel arrays might be changed in the future: https://github.com/opencv/opencv/issues/16739\n']
 
 
 class RunWidget(Widget):
